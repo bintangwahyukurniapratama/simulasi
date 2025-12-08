@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misi Komandan (AI Powered)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0a0000;
+            background-image: 
+                linear-gradient(rgba(255, 0, 0, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            color: #ff4d4d;
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+        }
+
+        .title-font { font-family: 'Black Ops One', cursive; }
+
+        /* Efek Kotak Misi */
+        .mission-box {
+            background: rgba(20, 0, 0, 0.8);
+            border: 2px solid #ff0000;
+            box-shadow: 0 0 10px #ff0000, inset 0 0 20px rgba(255, 0, 0, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .mission-box:hover {
+            transform: scale(1.05);
+            background: rgba(50, 0, 0, 0.9);
+            box-shadow: 0 0 20px #ff0000;
+        }
+        .mission-box.solved {
+            background: #1a1a1a;
+            border-color: #444;
+            box-shadow: none;
+            color: #444;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        .mission-box.solved::after {
+            content: "SELESAI";
+            color: #22c55e;
+            font-weight: bold;
+            position: absolute;
+            bottom: 10px;
+            font-size: 0.8rem;
+        }
+        .mission-box::before {
+            content: "RAHASIA";
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 2rem;
+            opacity: 0.1;
+            white-space: nowrap;
+        }
+
+        /* Modal Soal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 50;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: #1a0505;
+            border: 2px solid #ff4d4d;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+            max-width: 800px;
+            width: 90%;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            position: relative;
+            animation: scanline 0.5s ease-out;
+        }
+
+        @keyframes scanline {
+            0% { transform: scaleY(0); opacity: 0; }
+            100% { transform: scaleY(1); opacity: 1; }
+        }
+
+        .btn-action {
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            transition: 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+        .btn-submit { background: #eab308; color: black; width: 100%; }
+        .btn-submit:hover { background: #ca8a04; }
+        .btn-submit:disabled { background: #555; cursor: not-allowed; }
+
+        /* Input Area */
+        .input-terminal {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #ff4d4d;
+            color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            resize: none;
+            outline: none;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        .input-terminal:focus {
+            box-shadow: 0 0 10px #ff4d4d;
+        }
+
+        /* AI Feedback Area */
+        #ai-feedback {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: left;
+            border-left: 5px solid;
+        }
+        .feedback-success {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: #22c55e !important;
+            color: #dcfce7;
+        }
+        .feedback-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444 !important;
+            color: #fee2e2;
+        }
+
+        /* Loading Scan Animation */
+        .scanning-line {
+            height: 2px;
+            width: 100%;
+            background: #ff4d4d;
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: scanMove 2s infinite linear;
+            display: none;
+        }
+        @keyframes scanMove {
+            0% { top: 0; opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- FITUR TAMBAHAN: TOMBOL KEMBALI KE INDEX.HTML -->
+    <a href="index.html" class="fixed top-5 left-5 z-50 bg-red-600/80 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-bold backdrop-blur-md border border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition hover:scale-105 flex items-center gap-2 no-underline cursor-pointer">
+        <span>⬅</span> <span class="hidden md:inline">KEMBALI KE MENU</span>
+    </a>
+    <!-- AKHIR FITUR TAMBAHAN -->
+
+    <h1 class="text-4xl md:text-6xl text-red-600 title-font mb-2 text-center tracking-wider" style="text-shadow: 0 0 20px red;">MISI KOMANDAN</h1>
+    <p class="text-red-300 mb-8 text-lg md:text-xl tracking-widest text-center">ANALISIS AI DIAKTIFKAN. JAWAB DENGAN TEPAT!</p>
+
+    <!-- GRID MISI -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 w-full max-w-5xl">
+        <!-- 10 Tombol Misi -->
+        <div onclick="openMission(0)" id="box-0" class="mission-box h-32 flex flex-col items-center justify-center rounded-lg">
+            <span class="text-4xl font-bold">01</span>
+            <span class="text-xs mt-2">TARGET: BALAPAN</span>
+        </div>
+        <div onclick="openMission(1)" id="box-1" class="mission-box h-32 flex flex-col items-center justify-center rounded-lg">
+            <span class="text-4xl font-bold">02</span>
+            <span class="text-xs mt-2">TARGET: TEMAN BUMI</span>
+        </div>
+        <div onclick="openMission(2)" id="box-2" class="mission-box h-32 flex flex-col items-center justify-center rounded-lg">
+            <span class="text-4xl font-bold">03</span>
+            <span class="text-xs mt-2">TARGET: BATAS</span>
+        </div>
+        <div onclick="openMission(3)" id="box-3" class="mission-box h-32 flex flex-col items-center justify-center rounded-lg">
+            <span class="text-4xl font-bold">04</span>
+            <span class="text-xs mt-2">TARGET: EKOR</span>
+        </div>
+        <div onclick="openMission(4)" id="box-4" class="mission-box h-32 flex flex-col items-center justify-center rounded-lg">
+            <span class="text-4xl font-bold">05</span>
+            <span class="text-xs mt-2">TARGET: WARNA</span>
+        </div>
+        <div onclick="openMission(5)" id="box-5" class="mission-box h-32 flex flex-col items-center justify-center rounded-lg">
+            <span class="text-4xl font-bold">06</span>
+            <span class="text-xs mt-2">TARGET: JALAN MIRING</span>
+        </div>
+        <div onclick="openMission(6)" id="box-6" class="mission-box h-32 flex flex-col items-center justify-center rounded-lg">
+            <span class="text-4xl font-bold">07</span>
+            <span class="text-xs mt-2">TARGET: CINCIN</span>
+        </div>
+        <div onclick="openMission(7)" id="box-7" class="mission-box h-32 flex flex-col items-center justify-center rounded-lg">
+            <span class="text-4xl font-bold">08</span>
+            <span class="text-xs mt-2">TARGET: ULANG TAHUN</span>
+        </div>
+        <div onclick="openMission(8)" id="box-8" class="mission-box h-32 flex flex-col items-center justify-center rounded-lg">
+            <span class="text-4xl font-bold">09</span>
+            <span class="text-xs mt-2">TARGET: SIANG MALAM</span>
+        </div>
+        <div onclick="openMission(9)" id="box-9" class="mission-box h-32 flex flex-col items-center justify-center rounded-lg">
+            <span class="text-4xl font-bold">10</span>
+            <span class="text-xs mt-2">TARGET: PIJAKAN</span>
+        </div>
+    </div>
+
+    <!-- MODAL SOAL DENGAN AI -->
+    <div id="question-modal" class="modal-overlay">
+        <div class="modal-content overflow-hidden relative">
+            <div id="scan-line" class="scanning-line"></div>
+            
+            <div class="flex justify-between items-center mb-6 border-b border-red-800 pb-4">
+                <span class="text-red-500 font-bold tracking-widest">ENKRIPSI: CLASS-A</span>
+                <button onclick="closeModal()" class="text-red-500 hover:text-white text-2xl">&times;</button>
+            </div>
+
+            <h2 id="modal-question" class="text-xl md:text-2xl font-bold text-white mb-6 leading-relaxed text-left">
+                <!-- Soal Masuk Disini -->
+            </h2>
+
+            <div class="relative">
+                <textarea id="user-answer" rows="4" class="input-terminal" placeholder="Ketik laporan pengamatanmu di sini, Prajurit..."></textarea>
+                
+                <button id="btn-submit" onclick="analyzeAnswerWithAI()" class="btn-action btn-submit">
+                    📡 KIRIM LAPORAN KE KOMANDAN (AI)
+                </button>
+            </div>
+
+            <div id="loading-text" class="hidden mt-4 text-yellow-400 font-mono animate-pulse">
+                > MENGHUBUNGI MARKAS PUSAT...<br>
+                > MENGANALISIS DATA...
+            </div>
+
+            <div id="ai-feedback" class="font-mono text-sm md:text-base">
+                <h4 id="ai-status" class="font-bold text-lg mb-2"></h4>
+                <p id="ai-message"></p>
+                <div id="success-actions" class="mt-4 text-right hidden">
+                     <button onclick="closeModal()" class="text-xs text-white underline">TUTUP LOG</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURASI API KEY (ENV SIMULATION) ---
+        // API Key harus valid. Jika kosong, akan menggunakan environment runtime jika tersedia.
+        const ENV_API_KEY = "AIzaSyAMuWU3U1GdonJaLJYuWDq-zDoCBNJr01U"; 
+        
+        // 10 SOAL HOTS SD
+        const missions = [
+            {
+                q: "Coba ingat gerakan planet di simulasi. Merkurius lari kencang sekali, tapi Neptunus di ujung sana jalannya santai. Kenapa Merkurius harus lari kencang?",
+                a: "Karena Merkurius sangat dekat dengan Matahari. Kalau jalannya pelan, dia bisa tersedot jatuh ke Matahari karena gravitasi panasnya."
+            },
+            {
+                q: "Di dekat Bumi, ada dua benda kecil yang ikut muter-muter (Bulan dan Satelit Buatan). Kalau dilihat dari namanya, apa bedanya?",
+                a: "Bulan itu benda alam ciptaan Tuhan. Satelit Buatan itu mesin buatan manusia (untuk sinyal HP/TV)."
+            },
+            {
+                q: "Di antara Mars dan Jupiter, kamu melihat ada banyak batu-batu kecil yang berbaris melingkar (Sabuk Asteroid). Menurutmu, apa fungsi barisan batu itu?",
+                a: "Seperti pagar pembatas! Memisahkan planet-planet kecil berbatu (Dalam) dengan planet-planet raksasa (Luar)."
+            },
+            {
+                q: "Komet punya ekor panjang yang bercahaya. Kalau kamu perhatikan, kapan ekor itu muncul? Apakah saat jauh atau saat dekat Matahari?",
+                a: "Hanya saat dekat Matahari. Karena panas Matahari melelehkan es di komet, jadilah uap yang bersinar (ekor)."
+            },
+            {
+                q: "Mars di simulasi warnanya merah. Di panel info tertulis itu karena 'Besi Berkarat'. Kok bisa sama kayak pagar besi di rumah kita?",
+                a: "Iya, karena tanah di Mars memang banyak mengandung besi. Kalau besi kena udara lama-lama jadi merah (karatan)."
+            },
+            {
+                q: "Coba ingat jalur (orbit) Pluto di simulasi. Jalurnya miring sendirian, beda sama teman-temannya yang rata. Apa akibatnya kalau jalurnya miring begitu?",
+                a: "Pluto jadi sering main 'naik-turun'. Kadang dia ada di atas planet lain, kadang di bawah. Dia jadi planet yang unik dan beda sendiri."
+            },
+            {
+                q: "Saturnus punya 'hula hoop' atau cincin besar. Kalau kita naik pesawat ke sana, bisakah kita mendarat dan berdiri di atas cincin itu?",
+                a: "Tidak bisa! Cincin itu bukan jalanan padat, tapi kumpulan jutaan batu es kecil yang melayang-layang. Kita bakal tembus."
+            },
+            {
+                q: "Satu tahun itu artinya satu kali keliling Matahari. Di simulasi, Neptunus jalannya lamaaa sekali. Berarti, kalau kamu tinggal di Neptunus, ulang tahunmu jadi jarang atau sering?",
+                a: "Jarang sekali! Satu tahun di sana lamanya minta ampun (165 tahun Bumi). Kita mungkin seumur hidup tidak pernah ulang tahun di sana."
+            },
+            {
+                q: "Semua planet di simulasi berputar seperti gasing (Rotasi). Apa yang terjadi kalau Bumi tiba-tiba capek dan berhenti berputar?",
+                a: "Tidak ada lagi pagi dan malam. Satu sisi Bumi akan terus terang (kepanasan), sisi lainnya terus gelap (kedinginan)."
+            },
+            {
+                q: "Jupiter di simulasi ukurannya RAKSASA dibanding Bumi. Tapi kenapa kita tidak pindah ke sana saja? Kan luas?",
+                a: "Karena Jupiter itu 'Planet Gas'. Tidak ada tanah keras untuk dipijak. Kalau mendarat di sana, kita akan tenggelam ke dalam gas."
+            }
+        ];
+
+        let currentMissionId = -1;
+
+        function openMission(id) {
+            currentMissionId = id;
+            const mission = missions[id];
+            
+            // Reset UI
+            document.getElementById('modal-question').innerText = mission.q;
+            document.getElementById('user-answer').value = ""; // Kosongkan input
+            document.getElementById('user-answer').disabled = false;
+            document.getElementById('btn-submit').disabled = false;
+            document.getElementById('btn-submit').innerHTML = "📡 KIRIM LAPORAN KE KOMANDAN (AI)";
+            
+            // Sembunyikan elemen feedback & loading
+            document.getElementById('loading-text').classList.add('hidden');
+            document.getElementById('ai-feedback').style.display = 'none';
+            document.getElementById('scan-line').style.display = 'none';
+            document.getElementById('success-actions').classList.add('hidden');
+            
+            // Cek jika sudah solved sebelumnya
+            const box = document.getElementById(`box-${id}`);
+            if(box.classList.contains('solved')) {
+                document.getElementById('user-answer').value = "MISI SUDAH SELESAI. KERJA BAGUS PRAJURIT.";
+                document.getElementById('user-answer').disabled = true;
+                document.getElementById('btn-submit').disabled = true;
+                document.getElementById('btn-submit').innerHTML = "✓ MISI SELESAI";
+            }
+
+            // Tampilkan Modal
+            document.getElementById('question-modal').style.display = 'flex';
+        }
+
+        async function analyzeAnswerWithAI() {
+            const userAnswer = document.getElementById('user-answer').value.trim();
+            if (!userAnswer) return alert("Prajurit! Laporan tidak boleh kosong!");
+
+            // UI Loading State
+            document.getElementById('loading-text').classList.remove('hidden');
+            document.getElementById('btn-submit').disabled = true;
+            document.getElementById('scan-line').style.display = 'block';
+            document.getElementById('ai-feedback').style.display = 'none';
+
+            const mission = missions[currentMissionId];
+            
+            // Konstruksi Prompt untuk Gemini
+            const prompt = `
+            Bertindaklah sebagai Komandan Misi Luar Angkasa yang tegas namun adil.
+            Ada seorang prajurit (siswa SD) yang memberikan laporan pengamatan.
+            
+            Soal Misi: "${mission.q}"
+            Kunci Jawaban Konsep: "${mission.a}"
+            Laporan Prajurit: "${userAnswer}"
+
+            Tugasmu:
+            1. Analisis apakah jawaban prajurit mengandung konsep yang BENAR (walaupun bahasanya sederhana/anak-anak).
+            2. Jika Benar, berikan pujian militer singkat dan nyatakan status "BENAR".
+            3. Jika Salah, berikan koreksi tegas tapi mendidik dan nyatakan status "SALAH".
+            
+            Format Output WAJIB JSON seperti ini:
+            {
+                "status": "BENAR" atau "SALAH",
+                "message": "Kalimat feedback anda disini (maksimal 2 kalimat)"
+            }
+            `;
+
+            try {
+                // UPDATE: Menggunakan model 'gemini-2.5-flash-preview-09-2025' yang disupport
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${ENV_API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: prompt }]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                
+                // --- FIX: ERROR HANDLING ---
+                // Cek apakah ada error dari API
+                if (data.error) {
+                    console.error("API Error Response:", data.error);
+                    throw new Error(data.error.message || "API Error");
+                }
+                
+                // Cek apakah 'candidates' ada dan tidak kosong
+                if (!data.candidates || data.candidates.length === 0) {
+                     console.error("No candidates returned. Data:", data);
+                     // Cek apakah ada promptFeedback yang memblokir
+                     if (data.promptFeedback) {
+                        throw new Error(`Blocked by safety filter: ${data.promptFeedback.blockReason}`);
+                     }
+                     throw new Error("No candidates returned from AI");
+                }
+                
+                // Cek apakah content ada
+                if (!data.candidates[0].content || !data.candidates[0].content.parts) {
+                    console.error("Invalid content structure:", data.candidates[0]);
+                    throw new Error("Invalid response structure from AI");
+                }
+                // --- END FIX ---
+
+                // Parsing Response Gemini
+                let aiText = data.candidates[0].content.parts[0].text;
+                
+                // Bersihkan markdown jika ada (```json ... ```)
+                aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                const result = JSON.parse(aiText);
+                
+                showFeedback(result.status === "BENAR", result.message);
+
+            } catch (error) {
+                console.error("Error AI:", error);
+                showFeedback(false, `GAGAL MENGHUBUNGI MARKAS PUSAT. COBA LAGI, PRAJURIT! (${error.message})`);
+            }
+        }
+
+        function showFeedback(isCorrect, message) {
+            // Stop Loading
+            document.getElementById('loading-text').classList.add('hidden');
+            document.getElementById('scan-line').style.display = 'none';
+            document.getElementById('btn-submit').disabled = false;
+
+            const feedbackDiv = document.getElementById('ai-feedback');
+            const statusTitle = document.getElementById('ai-status');
+            const statusMsg = document.getElementById('ai-message');
+            
+            feedbackDiv.style.display = 'block';
+            
+            if (isCorrect) {
+                // Style Benar
+                feedbackDiv.className = "feedback-success";
+                statusTitle.innerText = "✓ LAPORAN DITERIMA: MISI SUKSES";
+                statusMsg.innerText = `KOMANDAN: "${message}"`;
+                
+                // Update Kotak Misi di Grid
+                const box = document.getElementById(`box-${currentMissionId}`);
+                if (!box.classList.contains('solved')) {
+                    box.classList.add('solved');
+                    box.style.background = '#14532d';
+                    box.style.borderColor = '#22c55e';
+                }
+                
+                document.getElementById('success-actions').classList.remove('hidden');
+                document.getElementById('btn-submit').disabled = true; // Kunci tombol submit
+            } else {
+                // Style Salah
+                feedbackDiv.className = "feedback-error";
+                statusTitle.innerText = "X LAPORAN DITOLAK: MISI GAGAL";
+                statusMsg.innerText = `KOMANDAN: "${message}"`;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('question-modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
