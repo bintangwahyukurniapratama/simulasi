@@ -255,7 +255,7 @@
     <script>
         // --- KONFIGURASI API KEY (ENV SIMULATION) ---
         // API Key harus valid. Jika kosong, akan menggunakan environment runtime jika tersedia.
-        const ENV_API_KEY = "AIzaSyAMuWU3U1GdonJaLJYuWDq-zDoCBNJr01U"; 
+        const ENV_API_KEY = "AIzaSyAocG7jeJcVJnIHOKeAPuICpg7yHZxtT64"; 
         
         // 10 SOAL HOTS SD
         const missions = [
@@ -409,7 +409,7 @@
                 // Parsing Response Gemini
                 let aiText = data.candidates[0].content.parts[0].text;
                 
-                // Bersihkan markdown jika ada (```json ... ```)
+                // Bersihkan markdown jika ada (json ... )
                 aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
                 
                 const result = JSON.parse(aiText);
@@ -463,4 +463,5 @@
         }
     </script>
 </body>
+
 </html>
