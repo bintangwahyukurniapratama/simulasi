@@ -256,7 +256,7 @@
         // --- KONFIGURASI API KEY ---
         // Kunci ini sudah di-RESTRICT di Google Cloud Console agar hanya jalan di website sekolah.
         // Siswa tidak perlu input apa-apa lagi.
-        const API_KEY = "AIzaSyDrD8CEuAHHhY_5qw6PFK8E8NCf7HyrYxI"; 
+        const API_KEY = "AIzaSyCV8ABMuYJw5STpACpxqd0tkNjULr2XWOE"; 
 
         // --- DATA SOAL ---
         const missions = [
@@ -390,10 +390,10 @@
                 }
                 
                 if (!data.candidates || data.candidates.length === 0) {
-                     if (data.promptFeedback) {
+                      if (data.promptFeedback) {
                         throw new Error(`Blocked by safety filter: ${data.promptFeedback.blockReason}`);
-                     }
-                     throw new Error("No candidates returned from AI");
+                      }
+                      throw new Error("No candidates returned from AI");
                 }
                 
                 // Parsing Response Gemini
